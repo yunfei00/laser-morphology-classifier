@@ -55,6 +55,46 @@ data/by_resolution/
 └── 2448x2048/
 ```
 
+## Phase 1 - 破氧文件名标准化
+
+用于处理 `data/raw/poyang` 下的破氧样本（仅 `40/60/80` 三个目录，且不扫描子目录），将文件复制并重命名到标准目录，同时导出 manifest CSV。
+
+### 脚本
+
+`normalize_poyang_filenames.py`
+
+### 支持格式
+
+- `.jpg`
+- `.tif`
+
+### 默认输入输出
+
+- 输入目录：`data/raw/poyang/40`、`data/raw/poyang/60`、`data/raw/poyang/80`
+- 输出目录：`data/interim/poyang_renamed/40`、`data/interim/poyang_renamed/60`、`data/interim/poyang_renamed/80`
+- Manifest：`data/interim/poyang_renamed_manifest.csv`
+
+### 命名规则
+
+`poyang_{score}_{index:04d}.{ext}`
+
+例如：`poyang_40_0001.jpg`
+
+### 运行方式
+
+```bash
+python normalize_poyang_filenames.py
+```
+
+可选参数：
+
+```bash
+python normalize_poyang_filenames.py \
+  --input-root data/raw/poyang \
+  --output-root data/interim/poyang_renamed \
+  --manifest-csv data/interim/poyang_renamed_manifest.csv
+```
+
 ## Planned Modules
 
 - 数据预处理
