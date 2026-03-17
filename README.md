@@ -95,6 +95,57 @@ python normalize_poyang_filenames.py \
   --manifest-csv data/interim/poyang_renamed_manifest.csv
 ```
 
+
+## Phase 1 - 构建二分类数据集（cleaned Poyang）
+
+用于读取 `data/interim/poyang_renamed/40|60|80` 的顶层图片（不扫描子目录），按映射关系 `40->fail`、`60/80->pass` 生成 train/val/test 数据集，并导出 manifest 与统计 CSV。
+
+### 脚本
+
+`build_binary_dataset.py`
+
+### 支持格式
+
+- `.jpg`
+- `.tif`
+
+### 默认输入输出
+
+- 输入目录：`data/interim/poyang_renamed/40`、`60`、`80`
+- 输出目录：`data/processed/dataset_binary/{train,val,test}/{fail,pass}`
+- Manifest：`data/processed/dataset_binary_manifest.csv`
+- Stats：`data/processed/dataset_binary_stats.csv`
+
+### 划分策略
+
+- 随机种子：`42`
+- 比例：train `70%`、val `15%`、test `15%`
+- 在二分类标签内部分别随机划分（fail/pass 各自按比例分配）
+
+### 运行方式
+
+```bash
+python build_binary_dataset.py
+```
+
+可选参数：
+
+```bash
+python build_binary_dataset.py \
+  --input-root data/interim/poyang_renamed \
+  --output-root data/processed/dataset_binary \
+  --manifest-csv data/processed/dataset_binary_manifest.csv \
+  --stats-csv data/processed/dataset_binary_stats.csv \
+  --seed 42
+```
+
+查看帮助：
+
+```bash
+python build_binary_dataset.py --help
+```
+
+
 ## Planned Modules
 
 - 数据预处理
