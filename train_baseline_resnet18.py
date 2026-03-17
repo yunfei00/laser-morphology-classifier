@@ -60,6 +60,12 @@ def parse_args() -> argparse.Namespace:
         help="Test metrics JSON path.",
     )
     parser.add_argument(
+        "--test-predictions-csv",
+        type=Path,
+        default=Path("outputs/test_predictions.csv"),
+        help="Test-set per-sample predictions CSV path.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Run one forward pass and data checks without full training.",
@@ -186,14 +192,18 @@ def evaluate_test(model: nn.Module, dataloader: DataLoader, device: torch.device
     model.eval()
     all_true: List[int] = []
     all_pred: List[int] = []
+    all_conf: List[float] = []
 
     with torch.no_grad():
         for images, labels in dataloader:
             images = images.to(device)
             outputs = model(images)
+            probs = torch.softmax(outputs, dim=1)
             preds = outputs.argmax(dim=1).cpu().tolist()
+            confs = probs.max(dim=1).values.cpu().tolist()
             all_pred.extend(preds)
             all_true.extend(labels.tolist())
+            all_conf.extend(confs)
 
     metrics = {
         "accuracy": accuracy_score(all_true, all_pred),
@@ -202,7 +212,47 @@ def evaluate_test(model: nn.Module, dataloader: DataLoader, device: torch.device
         "f1": f1_score(all_true, all_pred, zero_division=0),
         "confusion_matrix": confusion_matrix(all_true, all_pred).tolist(),
     }
+    metrics["predictions"] = [
+        {"true_label_idx": true_idx, "predicted_label_idx": pred_idx, "confidence": confidence}
+        for true_idx, pred_idx, confidence in zip(all_true, all_pred, all_conf)
+    ]
     return metrics
+
+
+def save_test_predictions(
+    dataloader: DataLoader,
+    prediction_items: List[Dict[str, float]],
+    csv_path: Path,
+) -> None:
+    dataset = dataloader.dataset
+    if not isinstance(dataset, datasets.ImageFolder):
+        raise TypeError("Expected test dataloader dataset to be torchvision.datasets.ImageFolder.")
+
+    idx_to_class = {idx: class_name for idx, class_name in enumerate(dataset.classes)}
+    image_paths = [path for path, _ in dataset.samples]
+
+    if len(image_paths) != len(prediction_items):
+        raise ValueError("Test prediction count does not match number of test samples.")
+
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(
+            f,
+            fieldnames=["image_path", "true_label", "predicted_label", "confidence", "correct"],
+        )
+        writer.writeheader()
+        for image_path, prediction in zip(image_paths, prediction_items):
+            true_idx = int(prediction["true_label_idx"])
+            pred_idx = int(prediction["predicted_label_idx"])
+            writer.writerow(
+                {
+                    "image_path": image_path,
+                    "true_label": idx_to_class[true_idx],
+                    "predicted_label": idx_to_class[pred_idx],
+                    "confidence": f"{float(prediction['confidence']):.6f}",
+                    "correct": true_idx == pred_idx,
+                }
+            )
 
 
 def save_train_log(rows: List[Dict[str, float]], csv_path: Path) -> None:
@@ -289,15 +339,19 @@ def main() -> None:
 
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     test_metrics = evaluate_test(model, dataloaders["test"], device)
+    prediction_items = test_metrics.pop("predictions")
 
     args.test_metrics_json.parent.mkdir(parents=True, exist_ok=True)
     with args.test_metrics_json.open("w", encoding="utf-8") as f:
         json.dump(test_metrics, f, ensure_ascii=False, indent=2)
 
+    save_test_predictions(dataloaders["test"], prediction_items, args.test_predictions_csv)
+
     print("Test metrics:")
     for key, value in test_metrics.items():
         print(f"  {key}: {value}")
     print(f"Test metrics saved to {args.test_metrics_json}")
+    print(f"Test predictions saved to {args.test_predictions_csv}")
 
 
 if __name__ == "__main__":
