@@ -221,3 +221,46 @@ python train_baseline_resnet18.py --dry-run
 - `predicted_label`：模型预测标签（`fail` / `pass`）
 - `confidence`：预测置信度（预测类别对应 softmax 概率）
 - `correct`：是否预测正确（`True` / `False`）
+
+
+## Phase 1 - 推理脚本（使用已训练模型）
+
+训练完成后可直接加载 `models/best_model.pth` 进行推理，无需重新运行训练流程。
+
+### 单图推理
+
+脚本：`predict_one.py`
+
+查看帮助：
+
+```bash
+python predict_one.py --help
+```
+
+示例：
+
+```bash
+python predict_one.py data/processed/dataset_binary/test/fail/example.jpg
+```
+
+### 文件夹批量推理（仅扫描顶层文件）
+
+脚本：`predict_folder.py`
+
+查看帮助：
+
+```bash
+python predict_folder.py --help
+```
+
+示例：
+
+```bash
+python predict_folder.py data/processed/dataset_binary/test/fail --output-csv outputs/folder_predictions.csv
+```
+
+CSV输出列：
+
+- `image_path`
+- `predicted_label`
+- `confidence`
