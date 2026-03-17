@@ -160,3 +160,55 @@ python build_binary_dataset.py --help
 - 加入鱼鳞纹样本
 - 支持更多缺陷类型
 - 增加桌面工具界面
+
+
+## Phase 1 - Baseline训练（ResNet18二分类）
+
+使用 `data/processed/dataset_binary/{train,val,test}` 进行基础模型训练，当前仅覆盖 cleaned Poyang 样本。
+
+### 环境要求
+
+- Python 3.9+
+- 依赖安装：
+
+```bash
+pip install -r requirements.txt
+```
+
+### 训练脚本
+
+`train_baseline_resnet18.py`
+
+查看帮助：
+
+```bash
+python train_baseline_resnet18.py --help
+```
+
+示例训练命令（默认参数）：
+
+```bash
+python train_baseline_resnet18.py
+```
+
+示例训练命令（显式参数）：
+
+```bash
+python train_baseline_resnet18.py \
+  --data-root data/processed/dataset_binary \
+  --epochs 20 \
+  --batch-size 16 \
+  --learning-rate 1e-4
+```
+
+示例 dry-run（仅做数据与前向自检，不完整训练）：
+
+```bash
+python train_baseline_resnet18.py --dry-run
+```
+
+### 输出文件位置
+
+- 最优模型：`models/best_model.pth`
+- 训练日志：`outputs/train_log.csv`
+- 测试指标：`outputs/test_metrics.json`
