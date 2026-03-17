@@ -212,3 +212,12 @@ python train_baseline_resnet18.py --dry-run
 - 最优模型：`models/best_model.pth`
 - 训练日志：`outputs/train_log.csv`
 - 测试指标：`outputs/test_metrics.json`
+- 测试集逐样本预测：`outputs/test_predictions.csv`
+
+`outputs/test_predictions.csv` 列说明：
+
+- `image_path`：测试图片路径
+- `true_label`：真实标签（`fail` / `pass`）
+- `predicted_label`：模型预测标签（`fail` / `pass`）
+- `confidence`：预测置信度（预测类别对应 softmax 概率）
+- `correct`：是否预测正确（`True` / `False`）
